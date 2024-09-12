@@ -1,26 +1,26 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, ChangeEvent, FormEvent } from 'react';
 import { TextField, Button, Box, Typography, Container, Alert } from '@mui/material';
-
 import { useRouter } from 'next/navigation';
+import { useCookies } from 'react-cookie';
 
-
-const Login = () => {
+const Login: React.FC = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
+  const [cookies, setCookie] = useCookies(['token']);
 
-  const handleEmailChange = (e) => {
+  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);
   };
 
-  const handlePasswordChange = (e) => {
+  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
     setPassword(e.target.value);
   };
 
-  const handleLogin = async (e) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
   
     try {
@@ -39,9 +39,9 @@ const Login = () => {
       const data = await response.json();
       const { token } = data;
   
-      // Save token to localStorage (or set it in a cookie)
-      localStorage.setItem('token', token);
-  
+      // Set the token in cookies
+      setCookie('token', token, { path: '/' });
+  console.log(cookies)
       // Redirect to dashboard
       router.push('/dashboard');
     } catch (error) {
@@ -49,7 +49,6 @@ const Login = () => {
       console.error('Login failed:', error);
     }
   };
-  
   
 
   return (
@@ -105,4 +104,4 @@ const Login = () => {
   );
 }
 
-export default Login;
+export default Login;
