@@ -1,89 +1,164 @@
-'use client';
+import React, { useState, useEffect, ChangeEvent, useContext } from 'react';
+import { Select, MenuItem, InputLabel, Dialog, DialogActions, DialogContent, DialogTitle, TextField, Button, SelectChangeEvent } from '@mui/material';
+import { DataContext } from '@/contexts/post';
 
-import * as React from 'react';
-import { useServerInsertedHTML } from 'next/navigation';
-import createCache from '@emotion/cache';
-import type { EmotionCache, Options as OptionsOfCreateCache } from '@emotion/cache';
-import { CacheProvider as DefaultCacheProvider } from '@emotion/react';
-
-interface Registry {
-  cache: EmotionCache;
-  flush: () => { name: string; isGlobal: boolean }[];
+interface AddOrderDialogProps {
+  open: boolean;
+  onClose: () => void;
+  selectedPostId?: string; // Optional prop to accept postId from another component
+  category: string;
+}
+interface Post {
+  id: string;
+  title: string;
+  status: string;
+  category: {
+    name: string;
+  };
 }
 
-export interface NextAppDirEmotionCacheProviderProps {
-  options: Omit<OptionsOfCreateCache, 'insertionPoint'>;
-  CacheProvider?: (props: { value: EmotionCache; children: React.ReactNode }) => React.JSX.Element | null;
-  children: React.ReactNode;
-}
-
-// Adapted from https://github.com/garronej/tss-react/blob/main/src/next/appDir.tsx
-export default function NextAppDirEmotionCacheProvider(props: NextAppDirEmotionCacheProviderProps): React.JSX.Element {
-  const { options, CacheProvider = DefaultCacheProvider, children } = props;
-
-  const [registry] = React.useState<Registry>(() => {
-    const cache = createCache(options);
-    cache.compat = true;
-    // eslint-disable-next-line @typescript-eslint/unbound-method -- Expected
-    const prevInsert = cache.insert;
-    let inserted: { name: string; isGlobal: boolean }[] = [];
-    cache.insert = (...args) => {
-      const [selector, serialized] = args;
-
-      if (cache.inserted[serialized.name] === undefined) {
-        inserted.push({ name: serialized.name, isGlobal: !selector });
-      }
-
-      return prevInsert(...args);
-    };
-    const flush = (): { name: string; isGlobal: boolean }[] => {
-      const prevInserted = inserted;
-      inserted = [];
-      return prevInserted;
-    };
-    return { cache, flush };
+const AddOrderDialog: React.FC<AddOrderDialogProps> = ({ open, onClose, selectedPostId, category }) => {
+  const [newCustomer, setNewCustomer] = useState({
+    fullName: '',
+    dateDebut: '',
+    dateFine: '',
+    price: '',
+    CIN: '',
+    postId: selectedPostId ?? '', // Initialize with selectedPostId or empty string
   });
+  const { data } = useContext(DataContext) as { data: Post[] };
 
-  useServerInsertedHTML((): React.JSX.Element | null => {
-    const inserted = registry.flush();
-
-    if (inserted.length === 0) {
-      return null;
+  useEffect(() => {
+    if (selectedPostId) {
+      setNewCustomer((prevState) => ({
+        ...prevState,
+        postId: selectedPostId ?? '', // Ensure postId is a string
+      }));
     }
+  }, [selectedPostId]);
 
-    let styles = '';
-    let dataEmotionAttribute = registry.cache.key;
-
-    const globals: { name: string; style: string }[] = [];
-
-    inserted.forEach(({ name, isGlobal }) => {
-      const style = registry.cache.inserted[name];
-
-      if (typeof style !== 'boolean') {
-        if (isGlobal) {
-          globals.push({ name, style });
-        } else {
-          styles += style;
-          dataEmotionAttribute += ` ${name}`;
-        }
-      }
+  const handleChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setNewCustomer({
+      ...newCustomer,
+      [event.target.name]: event.target.value,
     });
+  };
 
-    return (
-      <React.Fragment>
-        {globals.map(
-          ({ name, style }): React.JSX.Element => (
-            <style
-              dangerouslySetInnerHTML={{ __html: style }}
-              data-emotion={`${registry.cache.key}-global ${name}`}
-              key={name}
+  const handlePostChange = (event: SelectChangeEvent<string>) => {
+    setNewCustomer({ ...newCustomer, postId: event.target.value });
+  };
+
+  const handleSave = async () => {
+    try {
+      const response = await fetch('http://localhost:3001/api/DateReserve', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(newCustomer),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to save the order');
+      }
+
+      const result = await response.json();
+      console.log('Order saved successfully:', result);
+      onClose(); // Close the dialog after successful save
+    } catch (error) {
+      console.error('Error saving order:', error);
+    }
+  };
+
+  // Filter data to show only the selected post if selectedPostId exists
+  const filteredData = selectedPostId
+    ? data.filter((item: Post) => item.id === selectedPostId)
+    : data.filter((item: Post) => item.status !== 'unavailable' && item.status !== 'taken');
+
+  return (
+    <Dialog open={open} onClose={onClose}>
+      <DialogTitle>Add New Order</DialogTitle>
+      <DialogContent>
+        <TextField
+          autoFocus
+          margin="dense"
+          label="Name"
+          name="fullName"
+          fullWidth
+          variant="outlined"
+          value={newCustomer.fullName}
+          onChange={handleChange}
+        />
+        {category === 'Location' && (
+          <>
+            <TextField
+              margin="dense"
+              label="Start Date"
+              name="dateDebut"
+              type="date"
+              fullWidth
+              variant="outlined"
+              value={newCustomer.dateDebut}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
             />
-          )
+            <TextField
+              margin="dense"
+              label="End Date"
+              name="dateFine"
+              type="date"
+              fullWidth
+              variant="outlined"
+              value={newCustomer.dateFine}
+              onChange={handleChange}
+              InputLabelProps={{ shrink: true }}
+            />
+          </>
         )}
-        {styles ? <style dangerouslySetInnerHTML={{ __html: styles }} data-emotion={dataEmotionAttribute} /> : null}
-      </React.Fragment>
-    );
-  });
+        <TextField
+          margin="dense"
+          label="CIN"
+          name="CIN"
+          fullWidth
+          variant="outlined"
+          value={newCustomer.CIN}
+          onChange={handleChange}
+        />
+        <TextField
+          margin="dense"
+          label="Price"
+          name="price"
+          type="number"
+          fullWidth
+          variant="outlined"
+          value={newCustomer.price}
+          onChange={handleChange}
+        />
+        <InputLabel style={{ marginLeft: '10px' }}>Select available Post</InputLabel>
+        <Select
+          fullWidth
+          variant="outlined"
+          value={newCustomer.postId}
+          onChange={handlePostChange}
+        >
+          {filteredData.map((item) => (
+            <MenuItem key={item.id} value={item.id}>
+              {item.title}
+              <span style={{ color: 'red', marginLeft: '10px' }}>
+                {item.status} {item.category.name}
+              </span>
+            </MenuItem>
+          ))}
+        </Select>
+      </DialogContent>
+      <DialogActions>
+        <Button onClick={onClose}>Cancel</Button>
+        <Button onClick={handleSave} variant="contained">
+          Save
+        </Button>
+      </DialogActions>
+    </Dialog>
+  );
+};
 
-  return <CacheProvider value={registry.cache}>{children}</CacheProvider>;
-}
+export default AddOrderDialog;

@@ -1,18 +1,15 @@
 import React, { useContext } from 'react';
 
-interface OrderDetailsProps {
-  orderId: number;
- 
-}
+
 
 import { DataContext } from '@/contexts/post';
 
-const OrderDetails: React.FC<OrderDetailsProps> = ({ orderId }) => {
+const OrderDetails = ({ orderId }) => {
   const {  order } = useContext(DataContext);
   
   // Filter the orders based on the passed orderId
   const filteredOrder = order?.filter((item) => item.id === orderId);
-  const formatDate = (dateString: string) => {
+  const formatDate = (dateString) => {
     const date = new Date(dateString);
     const formattedDate = date.toLocaleDateString('en-CA'); // Format as YYYY-MM-DD
     const formattedTime = date.toLocaleTimeString('en-GB', {

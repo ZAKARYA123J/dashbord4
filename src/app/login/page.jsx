@@ -1,26 +1,26 @@
 "use client";
-import React, { useState, ChangeEvent, FormEvent } from 'react';
+import React, { useState } from 'react';
 import { TextField, Button, Box, Typography, Container, Alert } from '@mui/material';
 
 import { useRouter } from 'next/navigation';
 
 
-const Login: React.FC = () => {
+const Login = () => {
   const [email, setEmail] = useState<string>('');
   const [password, setPassword] = useState<string>('');
   const [error, setError] = useState<string | null>(null);
 
   const router = useRouter();
 
-  const handleEmailChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleEmailChange = (e) => {
     setEmail(e.target.value);
   };
 
-  const handlePasswordChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handlePasswordChange = (e) => {
     setPassword(e.target.value);
   };
 
-  const handleLogin = async (e: FormEvent) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
   
     try {
@@ -39,8 +39,8 @@ const Login: React.FC = () => {
       const data = await response.json();
       const { token } = data;
   
-      // Use react-cookie to set the cookie
-   
+      // Save token to localStorage (or set it in a cookie)
+      localStorage.setItem('token', token);
   
       // Redirect to dashboard
       router.push('/dashboard');
@@ -49,6 +49,7 @@ const Login: React.FC = () => {
       console.error('Login failed:', error);
     }
   };
+  
   
 
   return (

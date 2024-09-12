@@ -1,4 +1,4 @@
-import React, { useContext, useState, ChangeEvent } from 'react';
+import React, { useContext, useState } from 'react';
 import Card from '@mui/material/Card';
 import Table from '@mui/material/Table';
 import TableBody from '@mui/material/TableBody';
@@ -18,33 +18,9 @@ import { DataContext } from '@/contexts/post'; // Adjust the path accordingly
 import OrderDetails from './OrderDetails'; // Adjust the path accordingly
 import { useRouter } from 'next/navigation';
 
-interface Post {
-  id: number;
-  img: string[];
-  datePost: string;
-  lat: number;
-  lon: number;
-  prix: number;
-  adress: string;
-  ville: string;
-  status: string;
-  title: string;
-  categoryId: number;
-  typeId: number;
-}
 
-interface Order {
-  id: number;
-  fullName: string;
-  dateDebut: string;
-  dateFine: string | null;
-  CIN: string;
-  price: string;
-  postId: number;
-  post: Post;
-}
 
-export function CompaniesFilters(): React.JSX.Element {
+export function CompaniesFilters() {
   const { order, loading, error } = useContext(DataContext);
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
@@ -53,7 +29,7 @@ export function CompaniesFilters(): React.JSX.Element {
   const [searchQuery, setSearchQuery] = useState(''); // State for search query
   const router = useRouter();
 
-  const handleView = (orderId: number) => {
+  const handleView = (orderId) => {
     setSelectedOrderId(orderId);
     setOpen(true);
   };
@@ -87,7 +63,7 @@ export function CompaniesFilters(): React.JSX.Element {
     }
   };
 
-  const handleDeleteClick = (orderId: number) => {
+  const handleDeleteClick = (orderId) => {
     setSelectedOrderId(orderId);
     setConfirmDeleteOpen(true);
   };
@@ -97,15 +73,15 @@ export function CompaniesFilters(): React.JSX.Element {
     setSelectedOrderId(null);
   };
 
-  const handleUpdate = (orderId: number) => {
+  const handleUpdate = (orderId) => {
     router.push(`/dashboard/updateorder/${orderId}`);
   };
 
-  const handleSearchChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const handleSearchChange = (event) => {
     setSearchQuery(event.target.value);
   };
 
-  const filteredOrders = order.filter((order: Order) =>
+  const filteredOrders = order.filter((order) =>
     order.id.toString().includes(searchQuery) || 
     order.CIN.toLowerCase().includes(searchQuery.toLowerCase())
   );
@@ -144,7 +120,7 @@ export function CompaniesFilters(): React.JSX.Element {
               </TableRow>
             </TableHead>
             <TableBody>
-              {filteredOrders.map((order: Order) => (
+              {filteredOrders.map((order) => (
                 <TableRow key={order.id}>
                   <TableCell component="th" scope="row">
                     ORD-{order.id}
